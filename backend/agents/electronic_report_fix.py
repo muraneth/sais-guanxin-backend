@@ -5,35 +5,42 @@ import json
 from util.logger import service_logger
 import traceback
 
+import time
+from util.timer import Timer
+
 # Updated URL to match your curl command
 electronic_report_fixer_url = "http://10.12.34.32:5000/cardiomind-patcher"
 
-def fix_electronic_report(electronic_report_old: dict):
+def fix_electronic_report(electronic_report_old: dict, timeout_seconds: int = 120):
     """
     Fix electronic report using the cardiomind-patcher service
     
     Args:
         electronic_report_old (dict): The original electronic report with Chinese medical fields
+        timeout_seconds (int): Request timeout in seconds (default: 120 seconds)
         
     Returns:
         dict: The fixed electronic report
     """
+    timer = Timer()
+    start_time = time.time()
+    
     try:
         # Prepare the request data - send the report directly as the body
         headers = {
             "Content-Type": "application/json"
         }
         
-        # Log the request
-        service_logger.info(f"Sending request to {electronic_report_fixer_url}")
+        # Log the request with timeout info
+        service_logger.info(f"Sending request to {electronic_report_fixer_url} with timeout: {timeout_seconds}s")
         service_logger.info(f"Request data: {electronic_report_old}")
         
-        # Make the POST request
+        # Make the POST request with extended timeout
         response = requests.post(
             url=electronic_report_fixer_url,
             headers=headers,
             json=electronic_report_old,  # Send the report directly as JSON
-            timeout=30
+            timeout=timeout_seconds
         )
         
         # Check if request was successful
@@ -42,19 +49,34 @@ def fix_electronic_report(electronic_report_old: dict):
         # Parse the response
         result = response.json()
         
-        service_logger.info(f"Successfully received response from cardiomind-patcher")
+        elapsed_time = timer.duration()
+        service_logger.info(f"Successfully received response from cardiomind-patcher in {elapsed_time:.2f}s")
+        
+        # Log warning if it took longer than expected
+        if elapsed_time > 60:
+            service_logger.warning(f"Request took {elapsed_time:.2f}s (>60s) - consider optimizing the service")
+        
         return result
         
+    except requests.exceptions.Timeout as e:
+        elapsed_time = time.time() - start_time
+        service_logger.error(f"Request timed out after {elapsed_time:.2f}s (timeout: {timeout_seconds}s)")
+        service_logger.error(f"Timeout error: {str(e)}")
+        service_logger.error(traceback.format_exc())
+        raise
     except requests.exceptions.RequestException as e:
-        service_logger.error(f"Request failed: {str(e)}")
+        elapsed_time = time.time() - start_time
+        service_logger.error(f"Request failed after {elapsed_time:.2f}s: {str(e)}")
         service_logger.error(traceback.format_exc())
         raise
     except json.JSONDecodeError as e:
-        service_logger.error(f"Failed to parse JSON response: {str(e)}")
+        elapsed_time = time.time() - start_time
+        service_logger.error(f"Failed to parse JSON response after {elapsed_time:.2f}s: {str(e)}")
         service_logger.error(traceback.format_exc())
         raise
     except Exception as e:
-        service_logger.error(f"Unexpected error: {str(e)}")
+        elapsed_time = time.time() - start_time
+        service_logger.error(f"Unexpected error after {elapsed_time:.2f}s: {str(e)}")
         service_logger.error(traceback.format_exc())
         raise
 

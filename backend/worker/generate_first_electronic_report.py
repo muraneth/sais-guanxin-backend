@@ -79,10 +79,23 @@ def generate_first_electronic_report(task_id, task_params):
     original_report = electronic_report_result["electronic_report"]
     electronic_report_result["electronic_report_old"] = original_report
 
-    # Get fixed report
-    fixed_report = fix_electronic_report(original_report)
-    electronic_report_result["electronic_report"] = fixed_report
-    service_logger.info(f"electronic_report_result fixed: {electronic_report_result}")
+    # Get fixed report with extended timeout (120 seconds)
+    try:
+        service_logger.info(f"Starting electronic report fix for treatment_id: {treatment_id}")
+        fixed_report = fix_electronic_report(original_report, timeout_seconds=120)
+        
+        if fixed_report and isinstance(fixed_report, dict):
+            electronic_report_result["electronic_report"] = fixed_report
+            service_logger.info(f"Successfully fixed electronic report for treatment_id: {treatment_id}")
+        else:
+            service_logger.warning(f"Invalid response from fix_electronic_report for treatment_id: {treatment_id}, keeping original")
+            
+    except Exception as e:
+        service_logger.error(f"Failed to fix electronic report for treatment_id: {treatment_id}, error: {str(e)}")
+        service_logger.error(f"Keeping original electronic report due to fix failure")
+        # Keep the original report if fix fails
+        
+    service_logger.info(f"electronic_report_result final: {electronic_report_result}")
     # 保存电子病历
     medical_record_manager.insert_medical_record(electronic_report_result)
 
