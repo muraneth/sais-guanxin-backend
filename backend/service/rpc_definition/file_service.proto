@@ -1,0 +1,375 @@
+syntax = "proto3";
+
+package file_service;
+
+import "api.proto";
+import "file_common.proto";
+
+message CreateCollectionRequest {
+    optional string key = 1; // 可选的直接指定key，否则随机分配
+    string name = 2; // Collection名
+    optional string desc = 3; // Collection的描述
+    file_common.Visibility visibility = 4;
+
+    optional string owner_id = 12; // 指定owner,否则默认为当前operator
+}
+
+message CreateCollectionData {
+    file_common.Collection collection = 1;
+}
+
+message CreateCollectionResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    CreateCollectionData data = 4;
+}
+
+message ListCollectionsRequest {
+    int64 page_size = 1; // 必须大于0
+    int64 page_num = 2; // 从1起，传递不存在的页认为是在查询页数
+    file_common.Visibility visibility = 3;
+}
+
+message ListCollectionsData {
+    int64 page_size = 1;
+    int64 page_num = 2;
+    int64 page_cnt = 3;
+    repeated file_common.Collection collection = 4; // 本页的云盘
+}
+
+message ListCollectionsResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    ListCollectionsData data = 4;
+}
+
+message QueryCollectionRequest {
+    string key = 1[(api.path)="coll_key"];
+}
+
+message QueryCollectionData {
+    file_common.Collection collection = 1;
+}
+
+message QueryCollectionResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    QueryCollectionData data = 4;
+}
+
+message DeleteCollectionRequest {
+    string key = 1[(api.path)="coll_key"];
+}
+
+message DeleteCollectionData {
+    file_common.Collection collection = 1;
+}
+
+message DeleteCollectionResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    DeleteCollectionData data = 4;
+}
+
+message ListCollectionFileMetasRequest {
+    string key = 1[(api.path)="coll_key"];
+    int64 page_size = 2; // 必须大于0
+    int64 page_num = 3; // 从1起，传递不存在的页认为是在查询页数
+}
+
+message ListCollectionFileMetasData {
+    int64 page_size = 1;
+    int64 page_num = 2;
+    int64 page_cnt = 3;
+    repeated file_common.FileMeta files = 4; // 本页的文件
+}
+
+message ListCollectionFileMetasResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    ListCollectionFileMetasData data = 4;
+}
+
+enum StorageProvider {
+    SP_NOTUSED = 0;
+    SP_ALIOSS = 1; // 阿里云
+}
+
+message CreateCollectionParam {
+    string name = 2; // Collection名
+    optional string desc = 3; // Collection的描述
+    file_common.Visibility visibility = 4;
+
+    optional string owner_id = 12; // 指定owner
+}
+
+enum UploadFileMethod {
+    NotUsed = 0;
+    HttpMultiForm = 1; // HTTP MultiForm序列化所有参数，文件内容放在最后一个字段，字段名见file_field。
+}
+
+message PreUploadFileRequest {
+    string coll_key = 1[(api.path)="coll_key"];
+    string name = 3; // 文件名
+    optional string desc = 4; // 文件描述
+
+    bool create_coll_if_need = 10; // 如果collection不存在则自动创建
+    CreateCollectionParam create_param = 11; // 如果create_coll_if_need为true，则需要设置创建参数
+    
+    // 需是序列化的json对象，或者为空，可以用于作为文件属性进行检索
+    optional string attrs = 23;
+
+    repeated UploadFileMethod support_methods = 25; // 支持哪些序列化方法
+    string mime = 26; // 如果已经确定了要上传文件的Mime，传递此参数
+    string md5 = 27; // 文件的md5值，未来可以用做去重/文件秒传使用。
+    message Policy {
+        repeated string content_type_in = 1; // 可以提前框定上传的文件的ContentType的可能值，为空表示不限制
+    }
+    optional Policy policy = 28;
+    message CallbackParam {
+        string url = 1; // 回调的地址
+        string body = 2; // 回调的Body定制。${param}会被文本替换为的支持的系统参数
+    }
+    optional CallbackParam callback = 29; // 要求回调
+}
+
+message PreUploadFileData {
+    file_common.FileMeta file = 1; // 如果file.Stage是Ready，说明其实已经上传过，直接使用即可。
+    UploadFileMethod upload_method = 2; // 要求使用的上传方式
+    string url = 3; // HTTP时是要请求的链接
+    string method = 4; // HTTP时是GET、PUT、POST等
+    map<string,string> header = 5; // 上传时要携带的header
+    map<string,string> param = 6; // 要序列化的参数
+    string file_field = 7; // 文件内容要使用的字段名。
+}
+
+message PreUploadFileResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    PreUploadFileData data = 4;
+}
+
+message UploadFileCallbackRequest {
+    string env = 1[(api.path)="env"];
+    string ep_name = 2[(api.path)="ep_name"]; // 对应的FileStorage Endpoint名
+}
+
+message UploadFileData {
+    file_common.FileMeta file = 1;
+}
+
+message UploadFileResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    UploadFileData data = 4;
+}
+
+message CallbackTestRequest {
+    string param = 1;
+}
+
+message CallbackTestData {
+    string hint = 1;
+}
+
+message CallbackTestResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    CallbackTestData data = 4;
+}
+
+// 只支持表单请求，有一个名为uploadfile的表单字段，内容是文件。
+message UploadFileByPostRequest {
+    string coll_key = 1[(api.path)="coll_key"];
+    optional string desc = 4; // 文件描述
+
+    bool create_coll_if_need = 10; // 如果collection不存在则自动创建
+    CreateCollectionParam create_param = 11; // 如果create_coll_if_need为true，则需要设置创建参数
+    
+    // 需是序列化的json对象，或者为空，可以用于作为文件属性进行检索
+    optional string attrs = 23;
+}
+
+message UploadFileByPostData {
+    file_common.FileMeta file = 1;
+}
+
+message UploadFileByPostResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    UploadFileByPostData data = 4;
+}
+
+message DeleteFileRequest {
+    string key = 1[(api.path)="file_key"];
+}
+
+message DeleteFileData {
+    file_common.FileMeta  file = 1;
+}
+
+message DeleteFileResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    DeleteFileData data = 4;
+}
+
+message DownloadFileRequest {
+    string key = 1[(api.path)="file_key"];
+}
+
+// 如果报错了会答复这个，否则直接答复文件本身
+message DownloadFileResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+}
+
+message DownloadFileInternalRequest {
+    string key = 1[(api.path)="file_key"];
+}
+
+message DownloadFileInternalResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+}
+
+message TempDownloadLinkRequest {
+    string key = 1[(api.path)="file_key"];
+    uint32 expire_dur_s = 2; // 临时链接的过期秒数，必须大于0
+}
+
+message TempDownloadLinkData {
+    string link = 1; // GET下载文件的链接，注意要在时效内请求下载
+}
+
+message TempDownloadLinkResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    TempDownloadLinkData data = 4;
+}
+
+message ModifyFileSettingsRequest {
+    string key = 1[(api.path)="file_key"];
+    optional string name = 2; // 文件名
+    optional string desc = 3; // 文件描述
+}
+
+message ModifyFileSettingsData {
+    file_common.FileMeta file = 1;
+}
+
+message ModifyFileSettingsResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    ModifyFileSettingsData data = 4;
+}
+
+message QueryFileMetaRequest {
+    string key = 1[(api.path)="file_key"];
+}
+
+message QueryFileMetaData {
+    file_common.FileMeta file = 1[(api.body)="file"];
+}
+
+message QueryFileMetaResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    QueryFileMetaData data = 4;
+}
+
+message QueryFileMetasRequest {
+    repeated string keys = 1;
+}
+
+message QueryFileMetaFailResult {
+    string key = 1;
+    int32 code = 2;
+    string msg = 3;
+}
+
+message QueryFileMetasData {
+    repeated file_common.FileMeta files = 1;
+    repeated QueryFileMetaFailResult fails = 2;
+}
+
+message QueryFileMetasResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    QueryFileMetasData data = 4;
+}
+
+message CommonResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    bytes data = 4;
+}
+
+service FileService {
+    rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse) {
+        option (api.post) = "/api/v1/filesvc/collections";
+    };
+    rpc ListCollections(ListCollectionsRequest) returns (ListCollectionsResponse) {
+        option (api.post) = "/api/v1/filesvc/collections/query";
+    };
+    rpc QueryCollection(QueryCollectionRequest) returns (QueryCollectionResponse) {
+        option (api.get) = "/api/v1/filesvc/collections/:coll_key";
+    };
+    rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse) {
+        option (api.delete) = "/api/v1/filesvc/collections/:coll_key";
+    };
+    rpc ListCollectionFileMetas(ListCollectionFileMetasRequest) returns (ListCollectionFileMetasResponse) {
+        option (api.post) = "/api/v1/filesvc/collections/:coll_key/files/query";
+    }
+    rpc PreUploadFile(PreUploadFileRequest) returns (PreUploadFileResponse) {
+        option (api.post) = "/api/v1/filesvc/collections/:coll_key/pre-upload-file";
+    }
+    rpc UploadFileCallback(UploadFileCallbackRequest) returns (UploadFileResponse) {
+        // env纯粹为了方便在公网回调时路由到不同环境
+        option (api.post) = "/api/v1/filesvc/callback/:env/:tenant_id/:operator_id/:ep_name";
+    }
+    rpc CallbackTest(CallbackTestRequest) returns (CallbackTestResponse) {
+        option (api.get) = "/api/v1/filesvc/callback/:env/:tenant_id/:operator_id/:ep_name";
+    }
+    rpc UploadFileByPost(UploadFileByPostRequest) returns (UploadFileByPostResponse) {
+        option (api.post) = "/api/v1/filesvc/collections/:coll_key/files";
+    }
+    rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse) {
+        option (api.delete) = "/api/v1/filesvc/files/:file_key";
+    }
+    rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {
+        option (api.get) = "/api/v1/filesvc/files/:file_key";
+    }
+    rpc DownloadFileInternal(DownloadFileInternalRequest) returns (DownloadFileInternalResponse) {
+        option (api.get) = "/api/v1/filesvc/tenant/:tenant_id/files/:file_key";
+    }
+    rpc TempDownloadLink(TempDownloadLinkRequest) returns (TempDownloadLinkResponse) {
+        option (api.post) = "/api/v1/filesvc/files/:file_key/tmplink";
+    }
+    rpc ModifyFileSettings(ModifyFileSettingsRequest) returns (ModifyFileSettingsResponse) {
+        option (api.patch) = "/api/v1/filesvc/files/:file_key/settings";
+    }
+    rpc QueryFileMeta(QueryFileMetaRequest) returns (QueryFileMetaResponse) {
+        option (api.get) = "/api/v1/filesvc/files/:file_key/meta";
+    }
+    rpc QueryFileMetas(QueryFileMetasRequest) returns (QueryFileMetasResponse) {
+        option (api.post) = "/api/v1/filesvc/files/query";
+    }
+}

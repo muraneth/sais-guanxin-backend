@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package knowledge_dump;
+
+import "api.proto";
+import "knowledge_doc_online_dump.proto";
+
+message CommonResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    bytes data = 4;
+}
+
+message CreateDocOnlineDumpTaskRequest {
+    string kb_key = 1; // 需要指定目标知识库的key
+    knowledge_doc_online_dump.ImportType import_type = 2;
+    knowledge_doc_online_dump.LaunchParam param = 3;
+}
+
+message CreateDocOnlineDumpTaskData {
+    knowledge_doc_online_dump.DocOnlineDumpTask task = 1;
+}
+
+message CreateDocOnlineDumpTaskResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    CreateDocOnlineDumpTaskData data = 4;
+}
+
+message ListDocOnlineDumpTasksRequest {
+    string kb_key = 1; // 对应的知识库
+    int64 page_size = 2; // 必须大于0
+    int64 page_num = 3; // 从1起，传递不存在的页认为是在查询页数
+    repeated knowledge_doc_online_dump.Stage in_stages = 4; // 筛选状态
+}
+
+message ListDocOnlineDumpTasksData {
+    int64 page_size = 1;
+    int64 page_num = 2;
+    int64 page_cnt = 3;
+    repeated knowledge_doc_online_dump.DocOnlineDumpTask tasks = 4;
+    int64 tasks_cnt = 5; // 命中的任务总数
+}
+
+message ListDocOnlineDumpTasksResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    ListDocOnlineDumpTasksData data = 4;
+}
+
+message QueryDocOnlineDumpTaskFailResult {
+    string kb_key = 1;
+    string doc_key = 2;
+    int32 code = 3;
+    string msg = 4;
+}
+
+message QueryDocOnlineDumpTasksRequest {
+    string kb_key = 1; // 对应的知识库
+    repeated string doc_keys = 2; // 要查询的
+}
+
+message QueryDocOnlineDumpTasksData {
+    repeated knowledge_doc_online_dump.DocOnlineDumpTask tasks = 1;
+    repeated QueryDocOnlineDumpTaskFailResult fails = 2;
+}
+
+message QueryDocOnlineDumpTasksResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    QueryDocOnlineDumpTasksData data = 4;
+}
+
+message ModifyDocOnlineDumpTaskStageRequest {
+    string kb_key = 1; // 对应的知识库
+    string doc_key = 2; // 对应的知识文档key
+
+    knowledge_doc_online_dump.Stage stage = 5; // 想要修改为的状态
+}
+
+message ModifyDocOnlineDumpTaskStageData {
+    knowledge_doc_online_dump.DocOnlineDumpTask task = 1;
+}
+
+message ModifyDocOnlineDumpTaskStageResponse {
+    int32 code = 1;
+    string msg = 2;
+    string log_id = 3;
+    ModifyDocOnlineDumpTaskStageData data = 4;
+}
+
+service KnowledgeDumpService {
+    rpc CreateDocOnlineDumpTask(CreateDocOnlineDumpTaskRequest) returns (CreateDocOnlineDumpTaskResponse) {
+        option (api.post) = "/api/v1/knowledge/dump/doc_online_default/tasks";
+    };
+    rpc ListDocOnlineDumpTasks(ListDocOnlineDumpTasksRequest) returns (ListDocOnlineDumpTasksResponse) {
+        option (api.get) = "/api/v1/knowledge/dump/doc_online_default/tasks";
+    };
+    rpc QueryDocOnlineDumpTasks(QueryDocOnlineDumpTasksRequest) returns (QueryDocOnlineDumpTasksResponse) {
+        option (api.post) = "/api/v1/knowledge/dump/doc_online_default/tasks/query";
+    };
+    rpc ModifyDocOnlineDumpTaskStage(ModifyDocOnlineDumpTaskStageRequest) returns(ListDocOnlineDumpTasksResponse) {
+        option (api.post) = "/api/v1/knowledge/dump/doc_online_default/task-stage";
+    }
+}

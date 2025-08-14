@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package knowledge_doc_online_dump;
+
+enum Stage {
+    STG_ERROR   = 0; // 正常流程中的错误
+    STG_READY   = 1; // 已经准备完毕，可用
+    STG_PREPARE = 2; // Prepare阶段
+    STG_PARSE   = 3; // 解析阶段
+    STG_CHUNK   = 4; // Chunk阶段
+    STG_ADDDOC  = 5; // 入库阶段
+    STG_DELETE  = 10; // 删除阶段
+    STG_DELETED = 11; // 已经删除
+    STG_DELETEERR = 12; // 删除出错
+}
+
+message StageHint {
+    string msg = 1; // 进度提示消息
+}
+
+enum ImportType {
+    IT_RAWFILE   = 0; // 从原始文件FileKey导入
+    IT_PARSEDDOC = 1; // 从ParsedDoc的FileKey导入
+}
+
+message LaunchParam {
+    string file_key = 1; // 具体是哪一个文件类型由ImportType决定
+    string attrs = 2; // json对象的序列化，理应是小写的key。可以用于先设定一些属性，后面如果过程中产生其他Attrs会进行覆盖。
+}
+
+message DocOnlineDumpTask {
+    string kb_key = 1; // 隶属的知识库
+    string doc_key = 2; // 知识文档标识
+
+    Stage stage = 8; 
+    StageHint stage_hint = 9; // 进度相关的说明信息
+    ImportType import_type = 10;
+    
+    string raw_file_key = 15;
+    string parsed_doc_key = 16; // parseddoc的文件Key
+    string search_doc_key = 17;//  searchdoc的文件Key
+    string title = 18; // 解析出来的文档Title
+
+    string attrs = 23; // json对象的序列化，理应是小写的key。当前这个dump任务的属性，最终属性会做我知识文档的属性
+
+    int64 create_ts = 30; // 创建时间，unix s
+}

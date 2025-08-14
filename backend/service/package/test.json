@@ -1,0 +1,32 @@
+{
+  "_id": {
+    "$oid": "64449982348fa239368a4ed4"
+  },
+  "results": [
+    {
+      "name": "drop",
+      "fields": [
+        { "name": "em", "value": 0.2457005033557047 },
+        { "name": "em_stderr", "value": 0.004408740972120532 }
+      ]
+    }
+  ],
+  "versions": {
+    "drop": 1
+  },
+  "config": {
+    "model": "hf-causal",
+    "model_args": "pretrained=/cpfs01/shared/public/home/liushan/dumps/PRE_7B_2k/global_step185000/,dtype=bfloat16,max_length=8192",
+    "num_fewshot": 3,
+    "batch_size": 1,
+    "device": null,
+    "no_cache": true,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "description_dict": {}
+  },
+  "labels": {
+    "model_name": "hf-causal",
+    "token_in_billions": 185000
+  }
+}

@@ -1,0 +1,25 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: health-minio-route
+  namespace: health-pre
+spec:
+  http:
+  - backends:
+    - serviceName: minio
+      servicePort: 9000
+    match:
+      hosts:
+      - pre.mobile.zhongshan-doctor.inf-health.cn
+      paths:
+      - /ai-doctor.pre
+      - /ai-doctor.pre/*
+    name: minio-api
+    priority: 10  # 更高优先级
+    plugins:
+      - name: proxy-rewrite
+        enable: true
+        config:
+          headers:
+            remove:
+              - Cookie

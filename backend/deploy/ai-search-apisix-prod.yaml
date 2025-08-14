@@ -1,0 +1,112 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: health-knowledge-assistant-route
+  namespace: health-prod
+spec:
+  http:
+  - backends:
+    - serviceName: health-knowledge-assistant-service
+      servicePort: 8088
+    match:
+      hosts:
+      - assistant.inf-health.cn
+      paths:
+      - "/forward/api/*"
+    name: "forward"
+    priority: 10
+    plugins:
+    - name: "proxy-rewrite"
+      enable: true
+      config:
+        regex_uri:
+        - "^/forward/api/(.*)"
+        - "/api/$1"
+        headers:
+          set:
+            Client-Type: "forward"
+  - backends:
+    - serviceName: health-knowledge-assistant-service
+      servicePort: 8088
+    match:
+      hosts:
+      - assistant.inf-health.cn
+      paths:
+      - /api/*
+    name: backend
+    plugins:
+    - config:
+        bearer_only: false
+        client_id: health-knowledge-assistant-prod
+        client_secret: m6xKuWl1pSWV0NBp7ph662MTPLlQ9egV
+        discovery: https://login.infly.cn/realms/inf-public/.well-known/openid-configuration
+        introspection_endpoint_auth_method: client_secret_post
+        realm: inf-public
+        redirect_uri: http://assistant.inf-health.cn/api/balabala
+        scope: openid profile
+        session:
+          secret: EE1z9v0VFlJUmzejPNye8sRQ2mzFaRyhMegxEApUfTM=
+      enable: true
+      name: openid-connect
+    - name: proxy-rewrite
+      enable: true
+      config:
+        regex_uri:
+        - "^/knowledge-assistant/api/(.*)"
+        - "/api/$1"
+    - name: response-rewrite
+      config:
+        status_code: 401
+        vars:
+        - - status
+          - ==
+          - 302
+        - - uri
+          - '!'
+          - ~~
+          - balabala
+      enable: true
+  - backends:
+    - serviceName: health-assistant-fe
+      servicePort: 8000
+    match:
+      hosts:
+      - assistant.inf-health.cn
+      paths:
+      - /*
+      - /logout
+    name: frontend
+    plugins:
+    - config:
+        bearer_only: false
+        client_id: health-knowledge-assistant-prod
+        client_secret: m6xKuWl1pSWV0NBp7ph662MTPLlQ9egV
+        discovery: https://login.infly.cn/realms/inf-public/.well-known/openid-configuration
+        introspection_endpoint_auth_method: client_secret_post
+        realm: inf-public
+        redirect_uri: http://assistant.inf-health.cn/balabala
+        scope: openid profile
+        session:
+          secret: EE1z9v0VFlJUmzejPNye8sRQ2mzFaRyhMegxEApUfTM=
+      enable: true
+      name: openid-connect
+    - name: proxy-rewrite
+      enable: true
+      config:
+        regex_uri:
+        - "^/knowledge-assistant/(.*)"
+        - "/$1"
+    - name: response-rewrite
+      config:
+        headers:
+          set:
+            location: /
+        status_code: 302
+        vars:
+        - - status
+          - ==
+          - 500
+        - - uri
+          - ~~
+          - balabala
+      enable: true

@@ -1,0 +1,49 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  detailed:
+    format: "%(asctime)s - %(levelname)s: %(process)d - %(pathname)s:%(lineno)d %(funcName)s - %(message)s"
+  json_formatter:
+    (): "pythonjsonlogger.jsonlogger.JsonFormatter"
+    format: "timestamp=%(asctime)s level=%(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s service_name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] %(message)s"
+    rename_fields:
+      asctime: "timestamp"
+      levelname: "level"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: detailed
+  dev:
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: logs/log.log # for dev use
+    when: H
+    interval: 1
+    backupCount: 120  # Keep up to 5 days previous log files
+    level: INFO
+    formatter: detailed
+
+loggers:
+  service:
+    level: DEBUG
+    handlers: [console, dev]
+    propagate: no
+  algo:
+    level: DEBUG
+    handlers: [console, dev]
+    propagate: no
+  authing:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  default:
+    level: DEBUG
+    handlers: [console, dev]
+    propagate: no
+
+
+root:
+  level: INFO
+  handlers: [console]

@@ -1,0 +1,25 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: health-algo-medical-diagnosis-route
+  namespace: health-prod
+spec:
+  http:
+  - backends:
+    - serviceName: health-algo-service
+      servicePort: 5010
+    match:
+      hosts:
+      - api.inf-health.cn
+      paths:
+      - /assistant/medical_diagnosis
+      - /assistant/medical_diagnosis/*
+    name: medical-diagnosis
+    plugins:
+    - enable: true
+      name: key-auth
+    priority: 100
+    timeout:
+      connect: 10s
+      read: 10m
+      send: 10s

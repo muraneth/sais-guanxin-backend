@@ -1,0 +1,135 @@
+app_id: "health-knowledge-assistant"
+namespace: "health-dev"
+port: 8088
+prometheus_port: 2112
+llm_spliter: "event:message\ndata:"
+service:
+  is_demo_mode: true
+  check_examine_result_delay: 10
+  xunfei_asr:
+    url: "wss://iat.cn-huabei-1.xf-yun.com/v1"
+    appid: ""
+    apikey: ""
+    secret: ""
+  his_service_http_url: "http://10.21.72.159:32103"
+  his_default_dep_name: 
+    - "心外科" 
+    - "呼吸科"
+    - "内分泌科"
+    - "肾内科"
+    - "风湿免疫科"
+    - "肾病科"
+    - "心内科"
+    - "心脏内科"
+    - "呼吸内科"
+  task_queue_name: "tasks_dev"
+  image_fs_type: minio
+  tenant_id: "health"
+  search_domain: "http://dev.inf-health.work/knowledge-assistant"
+  app_id_from_fr: ""
+  request_time: 300
+  janus_type: "rpc"
+  janus_endpoint: "janus-quota-service:50051"
+  force_check_list: "ka-gujiawei-dev-01,gujiawei-tech"
+  jwt:
+    secret_key: ""
+  auth:
+    mock_auth: true
+    auth_type: "kc"
+    cookie_key: "inf-fin-token"
+    authing_app_id: ""
+    authing_app_secret: ""
+    authing_app_host: 'https://inf-knowledge-assistant.authing.cn'
+    authing_redirect_url: 'http://localhost:8088/login'
+    test_user_pool: ""
+    pool_secret: ""
+    user_group: "pdf-tests"
+    auth_namespace: ""
+    redirect_uri: "https://console.authing.cn/console/get-started/6476f31d3edb1c16b09b77c5"
+    inf_org_id: "64ad47a61f5215cb24f3873a"
+    inf_dep_id: "656d3f5c657eb6bccba44f6c"
+  storage:
+    mongo_db: "health_knowledge_assistant_test"
+    mongo_url: "mongodb://rwuser:xxxxxxxxxxxx@192.168.0.1:8635/health_knowledge_assistant_test?authSource=admin&replicaSet=replica"
+  oss:
+    max_file_size: 52428800
+    endpoint: "oss-cn-wulanchabu.aliyuncs.com"
+    bucket: "inf-alpha"
+    access_key: ""
+    access_secret: ""
+    target_path: "home/health/app/user_reports/knowledge_assistant"
+    cdn_host: "cdn.infly.cn"
+  minio:
+    endpoint: "https://pre.mobile.zhongshan-doctor.inf-health.cn"
+    access_key: ""
+    access_secret: ""
+    bucket: "ai-doctor.pre" # bucket name 中包含 . 确保 minio 使用 path style
+    target_path: "storage"
+    secure: true
+  file_service:
+    url: "http://10.11.131.194:30157"
+  dump_service:
+    max_files_per_wiki: 10
+    url: "http://10.11.131.194:31410"
+algorithm:
+  medical_algo_service_http_url: "http://10.21.72.159:32737"
+  ai_doctor_service_http_url: "http://10.21.72.159:32103"
+  announcement_index: "fin-cninfo-announcement"
+  guideline_index: "health-guideline"
+  report_index: "health-report"
+  knowledge_index: "health-knowledge"
+  private_index: "health-kb-inf-private"
+  llm:
+    url: https://api.infly.cn/chat/api/v2/send
+    model: gptx-sft-66b-0.5.21-10-fin_review
+    appid: ""
+    timeout: 60
+    temperature: 0.6
+  knowledge_base:
+    url: http://10.11.131.194:30029
+    index_name: fin-cninfo-announcement
+  index:
+    es:
+      hosts: http://a23.infly.cloud:9200
+      user: elastic
+      passwd: q3UlJM*bitkh=FA=Zrou
+      timeout: 10
+      build_timeout: 60
+      batch_size: 64
+    index_name_include_date: true
+    index_name_include_task_id: true
+    index_name_include_corp_info: false
+    ignore_if_exists: true
+    overwrite: true
+    drop_index_after_finished: true
+    timeout: 10
+  searcher:
+    plugins:
+      rewrite:
+        name: Rewrite
+        args:
+      recall:
+        name: Recall
+        args:
+      ranking:
+        name: Ranking
+        args:
+          topk: 20
+          path: '../conf/indicator_names.json'
+      generate:
+        name: Generate
+        args:
+  pipeline:
+    generate_content:
+      try_times: 3
+    fill_comment:
+      try_times: 2
+    generate_title:
+      try_times: 5
+      few_shot_number: 5
+      initial_temperature: 0.6
+  tracer:
+    table_name: financial-report-tracing-dev
+    overwrite: false
+    max_buffer_items: 512
+    enable: true

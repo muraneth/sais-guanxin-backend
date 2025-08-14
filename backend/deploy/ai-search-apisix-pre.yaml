@@ -1,0 +1,17 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: health-knowledge-assistant-route
+  namespace: health-pre
+spec:
+  http:
+  - backends:
+    - serviceName: health-knowledge-assistant-service
+      servicePort: 8088
+    match:
+      hosts:
+      - pre.m.ai-doctor.inf-health.cn
+      paths:
+      - "/api/doctor/*"
+    name: "forward"
+    priority: 10

@@ -1,0 +1,97 @@
+---
+# 持久卷声明
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-minio
+  namespace: health-pre
+  annotations:
+    everest.io/enterprise-project-id: "0"
+    volume.beta.kubernetes.io/storage-provisioner: everest-csi-provisioner
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: csi-sfsturbo
+  volumeMode: Filesystem
+  volumeName: pv-efs-health-pre
+
+---
+# 部署MinIO
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: health-pre
+spec:
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: inf-repo-registry.cn-wulanchabu.cr.aliyuncs.com/infly/minio:RELEASE.2024-06-26T01-06-18Z  # 确保已提前下载到本地
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 2
+            memory: "4Gi"
+        args:
+        - server
+        - /data
+        - --console-address
+        - :9090
+        ports:
+        - containerPort: 9000  # API端口
+        - containerPort: 9090  # 控制台端口（可选）
+        env:
+        - name: MINIO_ROOT_USER
+          value: "admin-health-pre"       # 强烈建议修改
+        - name: MINIO_ROOT_PASSWORD
+          value: "password-health-pre"    # 强烈建议修改
+        volumeMounts:
+        - name: storage
+          mountPath: /data
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: pvc-minio
+
+---
+# 创建服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: health-pre
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+  type: NodePort
+---
+# 创建服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console
+  namespace: health-pre
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: console
+      port: 9090
+      targetPort: 9090
+  type: NodePort

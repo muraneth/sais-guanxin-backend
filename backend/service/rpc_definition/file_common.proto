@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package file_common;
+
+enum Visibility {
+    VSB_NOTUSED = 0;
+    VSB_PRIVATE = 1; // 私有
+    VSB_PUBLIC  = 2; // 公开
+}
+
+enum FileStage {
+    FS_READY = 0; // 已经准备完毕，可用
+    FS_PREUPLOAD = 1; // 预上传，等待上传完毕
+    FS_ERROR = 2;
+}
+
+message FileStageHint {
+    string msg = 1; // 进度提示消息
+}
+
+message FileMeta {
+    string key = 1;
+    string coll_key = 2;
+    string name = 3; // 文件名
+    string desc = 4; // 文件描述
+    string mime = 5;
+    int64 size = 6; // 单位byte
+    string md5 = 7;
+    
+    FileStage stage = 8;
+    FileStageHint stage_msg = 9; // 进度相关的说明信息
+    bool is_deleted = 10;
+    // 
+    // 应该是json格式对象的序列化
+    string attrs = 23;
+}
+
+message Collection {
+    string key = 1; // 标识
+    string name = 5; // 名称
+    string desc = 6; // 描述
+    Visibility visibility = 7; // 可见性
+    // bool is_deleted = 10; // 已经删除，暂时用不上
+
+    string creator_id = 11; // 创建者标识
+    string owner_id = 12; // 拥有者的标识
+}

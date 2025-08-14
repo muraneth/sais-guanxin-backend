@@ -1,0 +1,29 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: health-ai-doctor-mobile-route-pujiang
+  namespace: health-pre
+spec:
+  http:
+  - backends:
+    - serviceName: health-knowledge-assistant-service
+      servicePort: 8088
+    match:
+      hosts:
+      - pre.mobile.doctor.inf-health.cn
+      paths:
+      - "/api/doctor/*"
+    name: backend
+    plugins:
+    - name: response-rewrite
+      config:
+        status_code: 401
+        vars:
+        - - status
+          - ==
+          - 302
+        - - uri
+          - '!'
+          - ~~
+          - balabala
+      enable: true
